@@ -4,8 +4,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.practice.full_auth.models.AppRole;
@@ -20,7 +18,6 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 import java.time.LocalDate;
 
-import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity
