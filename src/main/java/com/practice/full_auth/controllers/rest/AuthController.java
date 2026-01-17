@@ -3,6 +3,8 @@ package com.practice.full_auth.controllers.rest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.time.LocalDate;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,14 +16,24 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.practice.full_auth.models.AppRole;
+import com.practice.full_auth.models.Role;
+import com.practice.full_auth.models.User;
+import com.practice.full_auth.repository.RoleRepository;
+import com.practice.full_auth.repository.UserRepository;
 import com.practice.full_auth.security.jwt.JwtUtils;
 import com.practice.full_auth.security.request.LoginRequest;
+import com.practice.full_auth.security.request.SignupRequest;
 import com.practice.full_auth.security.response.LoginResponse;
+import com.practice.full_auth.security.response.MessageResponse;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("api/auth")
@@ -31,6 +43,15 @@ public class AuthController {
 
     @Autowired
     AuthenticationManager authenticationManager;
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    RoleRepository roleRepository;
+
+    @Autowired
+    PasswordEncoder encoder;
 
     @PostMapping("/public/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
@@ -62,5 +83,51 @@ public class AuthController {
 
         // Return the response entity with the JWT token included in the response body
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/public/signup")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
+        if (userRepository.existsByUserName(signUpRequest.getUsername())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Username is already taken!"));
+        }
+
+        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is already in use!"));
+        }
+
+        // Create new user's account
+        User user = new User(signUpRequest.getUsername(),
+                signUpRequest.getEmail(),
+                encoder.encode(signUpRequest.getPassword()));
+
+        Set<String> strRoles = signUpRequest.getRole();
+        Role role;
+
+        if (strRoles == null || strRoles.isEmpty()) {
+            role = roleRepository.findByRoleName(AppRole.ROLE_USER)
+                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+        } else {
+            String roleStr = strRoles.iterator().next();  
+            if (roleStr.equals("admin")) {
+                role = roleRepository.findByRoleName(AppRole.ROLE_ADMIN)
+                        .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+            } else {
+                role = roleRepository.findByRoleName(AppRole.ROLE_USER)
+                        .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+            }
+
+            user.setAccountNonLocked(true);
+            user.setAccountNonExpired(true);
+            user.setCredentialsNonExpired(true);
+            user.setEnabled(true);
+            user.setCredentialsExpiryDate(LocalDate.now().plusYears(1));
+            user.setAccountExpiryDate(LocalDate.now().plusYears(1));
+            user.setTwoFactorEnabled(false);
+            user.setSignUpMethod("email");
+        }
+        user.setRole(role);
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
 }
