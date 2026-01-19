@@ -44,6 +44,7 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+        http.cors(withDefaults());
         http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).ignoringRequestMatchers("/api/auth/public/**"));
         // http.csrf(AbstractHttpConfigurer::disable);
         http.authorizeHttpRequests((requests) -> requests.
