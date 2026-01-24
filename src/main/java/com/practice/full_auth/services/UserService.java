@@ -24,4 +24,6 @@ public interface UserService {
     void updateAccountEnabledStatus(Long userId, boolean enabled);
 
     void updatePassword(Long userId, String password);
+
+    public void generatePasswordResetToken(String email);
 }

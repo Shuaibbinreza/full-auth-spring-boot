@@ -6,17 +6,28 @@ import org.springframework.stereotype.Service;
 
 import com.practice.full_auth.dtos.UserDTO;
 import com.practice.full_auth.models.AppRole;
+import com.practice.full_auth.models.PasswordResetToken;
 import com.practice.full_auth.models.Role;
 import com.practice.full_auth.models.User;
+import com.practice.full_auth.repository.PasswordResetTokenRepository;
 import com.practice.full_auth.repository.RoleRepository;
 import com.practice.full_auth.repository.UserRepository;
 import com.practice.full_auth.services.UserService;
+import com.practice.full_auth.util.EmailService;
 
+import org.springframework.beans.factory.annotation.Value;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserServiceImpl implements UserService {
+
+    @Value("${frontend.url}")
+    String frontendUrl;
     
     @Autowired
     UserRepository userRepository;
@@ -26,6 +37,12 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     PasswordEncoder passwordEncoder;
+
+    @Autowired
+    PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
+    EmailService emailService;
 
     @Override
     public void updateUserRole(Long userId, String roleName) {
@@ -116,5 +133,20 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to update password");
         }
+    }
+
+    @Override
+    public void generatePasswordResetToken(String email){
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = UUID.randomUUID().toString();
+        Instant expiryDate = Instant.now().plus(24, ChronoUnit.HOURS);
+        PasswordResetToken resetToken = new PasswordResetToken(token, expiryDate, user);
+        passwordResetTokenRepository.save(resetToken);
+
+        String resetUrl = frontendUrl + "/reset-password?token=" + token;
+        // Send email to user
+        emailService.sendPasswordResetEmail(user.getEmail(), resetUrl);
     }
 }
