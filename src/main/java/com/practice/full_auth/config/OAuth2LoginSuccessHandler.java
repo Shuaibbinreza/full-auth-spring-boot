@@ -15,6 +15,9 @@ import org.springframework.security.web.authentication.SavedRequestAwareAuthenti
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.practice.full_auth.models.AppRole;
+import com.practice.full_auth.models.Role;
+import com.practice.full_auth.models.User;
 import com.practice.full_auth.repository.RoleRepository;
 import com.practice.full_auth.security.jwt.JwtUtils;
 import com.practice.full_auth.security.services.UserDetailsImpl;
