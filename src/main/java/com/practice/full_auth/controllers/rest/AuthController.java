@@ -38,6 +38,7 @@ import com.practice.full_auth.security.request.SignupRequest;
 import com.practice.full_auth.security.response.LoginResponse;
 import com.practice.full_auth.security.response.MessageResponse;
 import com.practice.full_auth.security.response.UserInfoResponse;
+import com.practice.full_auth.security.services.UserDetailsImpl;
 import com.practice.full_auth.services.TotpService;
 import com.practice.full_auth.services.UserService;
 import com.practice.full_auth.util.AuthUtil;
@@ -89,7 +90,7 @@ public class AuthController {
         //      set the authentication
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
 
@@ -230,7 +231,7 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/user/2fa-status")
+    @GetMapping("/user/2fa-status")
     public ResponseEntity<?> get2FAStatus() {
         User user = authUtil.loggedInUser();
 
